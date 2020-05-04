@@ -10,6 +10,133 @@ const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
 
+class EmployeeInfo {
+    //array to store employee info and object of current emloyee that user is adding
+    constructor() {
+        this.employees = [];
+        this.currentEmployee = {
+            name: "",
+            id: "",
+            email: "",
+        }
+    }
+    //get all the basic employee info from user
+    addEmployee() {
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "Name?",
+                name: "name"
+            }, {
+                type: "input",
+                message: "ID?",
+                name: "id"
+            }, {
+                type: "input",
+                message: "Email?",
+                name: "email"
+            }, {
+                type: "list",
+                message: "Employee role?",
+                name: "role",
+                choices: ["Manager", "Engineer", "Intern"]
+            }
+        ]).then(response => {
+            //store all the basic info to currentEmployee object
+            this.currentEmployee.name = response.name;
+            this.currentEmployee.id = response.id;
+            this.currentEmployee.email = response.email;
+            //according to the role add more info
+            switch (response.role) {
+                case "Manager":
+                    this.addManagerInfo();
+                    break;
+                case "Engineer":
+                    this.addEngineerInfo();
+                    break;
+                case "Intern":
+                    this.addInternInfo();
+            }
+        })
+    }
+    //add specific info for employee and push all info to employees array
+    //then ask the user if they want to continue
+    addManagerInfo() {
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "Office number?",
+                name: "officeNumber"
+            }
+        ]).then(response => {
+            const manager = new Manager(this.currentEmployee.name, this.currentEmployee.id, this.currentEmployee.email, response.officeNumber);
+            this.employees.push(manager);
+            this.askToContinue();
+        });
+    }
+    addEngineerInfo() {
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "GitHub username?",
+                name: "github"
+            }
+        ]).then(response => {
+            const engineer = new Engineer(this.currentEmployee.name, this.currentEmployee.id, this.currentEmployee.email, response.github);
+            this.employees.push(engineer);
+            this.askToContinue();
+        });
+    }
+    addInternInfo() {
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "School?",
+                name: "school"
+            }
+        ]).then(response => {
+            const intern = new Intern(this.currentEmployee.name, this.currentEmployee.id, this.currentEmployee.email, response.school);
+            this.employees.push(intern);
+            this.askToContinue();
+        });
+    }
+
+    askToContinue() {
+        inquirer.prompt([
+            {
+                type: "confirm",
+                message: "Continue?",
+                name: "confirm"
+            }
+        ]).then(response => {
+            if (response.confirm) {
+                this.addEmployee();
+            } else {
+                this.quit();
+            }
+        })
+    }
+
+    render(path, data) {
+        fs.writeFileSync(path, data, (error) => {
+            if (error) throw error;
+        });
+    }
+
+    quit() {
+        if (!fs.existsSync(OUTPUT_DIR)) {
+            fs.mkdirSync(OUTPUT_DIR);
+            this.render(outputPath, render(this.employees));
+        } else {
+            this.render(outputPath, render(this.employees));
+        }
+        console.log("Done.");
+        process.exit(0);
+    }
+}
+
+const addEmployee = new EmployeeInfo();
+addEmployee.addEmployee();
 
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
